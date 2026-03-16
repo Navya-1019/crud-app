@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Student CRUD App</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f8f9ff; }
+    nav { background: linear-gradient(135deg, #667eea, #764ba2); padding: 18px 40px; }
+    nav h1 { color: white; font-size: 24px; }
+    .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+    .form-card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); margin-bottom: 30px; }
+    .form-card h2 { color: #667eea; margin-bottom: 20px; }
+    input { width: 100%; padding: 10px 15px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+    .btn { padding: 10px 25px; border: none; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 14px; }
+    .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+    .btn-edit { background: #f0f0ff; color: #667eea; margin-right: 8px; }
+    .btn-delete { background: #fff0f0; color: #e74c3c; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+    th { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 15px; text-align: left; }
+    td { padding: 12px 15px; border-bottom: 1px solid #f0f0f0; }
+    tr:hover { background: #f8f9ff; }
+  </style>
+</head>
+<body>
+  <nav><h1>🎓 Student Manager</h1></nav>
+  <div class="container">
+    <div class="form-card">
+      <h2 id="formTitle">Add New Student</h2>
+      <input type="text" id="name" placeholder="Full Name" />
+      <input type="email" id="email" placeholder="Email" />
+      <input type="number" id="age" placeholder="Age" />
+      <input type="text" id="course" placeholder="Course" />
+      <button class="btn btn-primary" onclick="saveStudent()">Add Student</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Age</th>
+          <th>Course</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="studentList"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API = 'http://localhost:5000/students'
+    let editId = null
+
+    async function loadStudents() {
+      const res = await fetch(API)
+      const students = await res.json()
+      const tbody = document.getElementById('studentList')
+      tbody.innerHTML = ''
+      students.forEach(s => {
+        tbody.innerHTML += `
+          <tr>
+            <td>${s.name}</td>
+            <td>${s.email}</td>
+            <td>${s.age}</td>
+            <td>${s.course}</td>
+            <td>
+              <button class="btn btn-edit" onclick="editStudent('${s._id}', '${s.name}', '${s.email}', ${s.age}, '${s.course}')">Edit</button>
+              <button class="btn btn-delete" onclick="deleteStudent('${s._id}')">Delete</button>
+            </td>
+          </tr>`
+      })
+    }
+
+    async function saveStudent() {
+      const data = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        age: document.getElementById('age').value,
+        course: document.getElementById('course').value
+      }
+      if (editId) {
+        await fetch(`${API}/${editId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+        editId = null
+        document.getElementById('formTitle').innerText = 'Add New Student'
+      } else {
+        await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+      }
+      document.getElementById('name').value = ''
+      document.getElementById('email').value = ''
+      document.getElementById('age').value = ''
+      document.getElementById('course').value = ''
+      loadStudents()
+    }
+
+    function editStudent(id, name, email, age, course) {
+      editId = id
+      document.getElementById('name').value = name
+      document.getElementById('email').value = email
+      document.getElementById('age').value = age
+      document.getElementById('course').value = course
+      document.getElementById('formTitle').innerText = 'Edit Student'
+    }
+
+    async function deleteStudent(id) {
+      await fetch(`${API}/${id}`, { method: 'DELETE' })
+      loadStudents()
+    }
+
+    loadStudents()
+  </script>
+</body>
+</html>
